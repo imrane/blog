@@ -26,7 +26,7 @@ export async function Image({
       if (src.startsWith("http")) {
         const response = await fetch(src);
         const arrayBuffer = await response.arrayBuffer();
-        imageBuffer = Buffer.from(arrayBuffer);
+        imageBuffer = Buffer.from(arrayBuffer as ArrayBuffer);
       } else {
         if (
           !process.env.CI &&
@@ -43,7 +43,7 @@ export async function Image({
             throw new Error(`Failed to fetch image: ${response.status}`);
           }
           const arrayBuffer = await response.arrayBuffer();
-          imageBuffer = Buffer.from(arrayBuffer);
+          imageBuffer = Buffer.from(arrayBuffer as ArrayBuffer);
         } else {
           imageBuffer = await readFile(
             new URL(
