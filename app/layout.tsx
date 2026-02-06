@@ -17,23 +17,23 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata = {
-  title: "Guillermo Rauch's blog",
-  description:
-    "Guillermo Rauch is the CEO and founder of Vercel, a software engineer, and the creator of Next.js, Mongoose, Socket.io and other open source libraries.",
+  title: "Imran's blog",
+  description: "Imran's blog.",
   openGraph: {
-    title: "Guillermo Rauchg's blog",
-    description:
-      "Guillermo Rauch is the CEO and founder of Vercel, a software engineer, and the creator of Next.js, Mongoose, Socket.io and other open source libraries.",
-    url: "https://rauchg.com",
-    siteName: "Guillermo Rauchg's blog",
+    title: "Imran's blog",
+    description: "Imran's blog.",
+    // Update to your real domain when you deploy
+    url: "https://example.com",
+    siteName: "Imran's blog",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@rauchg",
-    creator: "@rauchg",
+    site: "@imrane",
+    creator: "@imrane",
   },
-  metadataBase: new URL("https://rauchg.com"),
+  // Update to your real domain when you deploy
+  metadataBase: new URL("https://example.com"),
 };
 
 export const viewport = {
