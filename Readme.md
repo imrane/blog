@@ -8,6 +8,20 @@ deployed to the cloud via [Vercel](https://vercel.com).
 
 First, install [Vercel CLI](https://vercel.com/download).
 
+### Local services
+
+This project now uses a local Redis instance for caching (in place of Upstash).
+Start the Docker services and set your environment before running the app:
+
+```bash
+docker compose up -d
+cp .env.local.example .env.local # adjust as needed
+```
+
+There are currently no other third-party API keys required. Tweet embeds rely on
+the `react-tweet` package, which uses Twitter's public embed endpoints and
+requires no credentials.
+
 ### Development
 
 ```

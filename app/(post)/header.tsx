@@ -38,11 +38,11 @@ export function Header({ posts }: { posts: Post[] }) {
           <span className="hidden md:inline">
             <span>
               <a
-                href="https://twitter.com/rauchg"
+                href="https://twitter.com/imrane"
                 className="hover:text-neutral-800 dark:hover:text-neutral-400"
                 target="_blank"
               >
-                @rauchg
+                @imrane
               </a>
             </span>
 
@@ -75,7 +75,9 @@ function Views({ id, mutate, defaultValue }) {
   const didLogViewRef = useRef(false);
 
   useEffect(() => {
-    if ("development" === process.env.NODE_ENV) return;
+    // Log views in dev too (useful for self-hosted testing). Disable explicitly via SKIP_VIEWS.
+    if (process.env.NEXT_PUBLIC_SKIP_VIEWS === "1") return;
+
     if (!didLogViewRef.current) {
       const url = "/api/view?incr=1&id=" + encodeURIComponent(id);
       fetch(url)

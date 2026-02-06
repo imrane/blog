@@ -1,40 +1,39 @@
 import "./globals.css";
 
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Roboto_Mono } from "next/font/google";
 import { Analytics } from "./analytics";
 import { Header } from "./header";
 import { Footer } from "./footer";
 import { doge } from "./doge";
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-geist-sans"
+  variable: "--font-sans",
 });
 
-const geistMono = Geist_Mono({
+const robotoMono = Roboto_Mono({
   subsets: ["latin"],
-  variable: "--font-geist-mono",
-  fallback: ["ui-monospace", "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "monospace"]
+  variable: "--font-mono",
 });
 
 export const metadata = {
-  title: "Guillermo Rauch's blog",
-  description:
-    "Guillermo Rauch is the CEO and founder of Vercel, a software engineer, and the creator of Next.js, Mongoose, Socket.io and other open source libraries.",
+  title: "Imran's blog",
+  description: "Imran's blog.",
   openGraph: {
-    title: "Guillermo Rauchg's blog",
-    description:
-      "Guillermo Rauch is the CEO and founder of Vercel, a software engineer, and the creator of Next.js, Mongoose, Socket.io and other open source libraries.",
-    url: "https://rauchg.com",
-    siteName: "Guillermo Rauchg's blog",
+    title: "Imran's blog",
+    description: "Imran's blog.",
+    // Update to your real domain when you deploy
+    url: "https://example.com",
+    siteName: "Imran's blog",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@rauchg",
-    creator: "@rauchg",
+    site: "@imrane",
+    creator: "@imrane",
   },
-  metadataBase: new URL("https://rauchg.com"),
+  // Update to your real domain when you deploy
+  metadataBase: new URL("https://example.com"),
 };
 
 export const viewport = {
@@ -49,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${geistMono.variable} ${geist.className} antialiased`}
+      className={`${inter.variable} ${robotoMono.variable} ${inter.className} antialiased`}
       suppressHydrationWarning={true}
     >
       <head>
