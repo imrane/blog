@@ -10,3 +10,8 @@ TODO
 .env*.local
 fonts/*
 !fonts/init.mjs
+
+# Nix
+.direnv/
+result
+result-*
