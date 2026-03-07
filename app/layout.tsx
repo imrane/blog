@@ -1,20 +1,15 @@
 import "./globals.css";
 
-import { Inter, Roboto_Mono } from "next/font/google";
+import "@fontsource/inter/variable.css";
+import "@fontsource/roboto-mono/variable.css";
+
 import { Analytics } from "./analytics";
 import { Header } from "./header";
 import { Footer } from "./footer";
 import { doge } from "./doge";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
 
-const robotoMono = Roboto_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-});
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Imran's blog",
@@ -48,7 +43,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${robotoMono.variable} ${inter.className} antialiased`}
+      className="antialiased"
+      style={{
+        fontFamily: "'Inter Variable', Inter, system-ui, sans-serif",
+      }}
       suppressHydrationWarning={true}
     >
       <head>
