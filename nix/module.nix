@@ -24,6 +24,13 @@ in
       description = "Port for the blog service.";
     };
 
+    redisUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "redis://redis.internal:6379";
+      description = "Shared Redis URL for views/tweet cache. If null, app default is used.";
+    };
+
     environment = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
@@ -57,6 +64,7 @@ in
           PORT = toString cfg.port;
           NODE_ENV = "production";
         }
+        // lib.optionalAttrs (cfg.redisUrl != null) { REDIS_URL = cfg.redisUrl; }
         // cfg.environment;
 
       serviceConfig = {
