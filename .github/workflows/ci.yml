@@ -37,7 +37,7 @@ jobs:
               cat /tmp/blog.log || true
               exit 1
             fi
-            if curl -fsS "http://127.0.0.1:3000/api/health" > /tmp/health.json; then
+            if curl -fsS "http://127.0.0.1:3000/api/health" > /tmp/health.json 2>/dev/null; then
               break
             fi
             sleep 1
