@@ -85,7 +85,6 @@ in
         ProtectControlGroups = true;
         RestrictSUIDSGID = true;
         LockPersonality = true;
-        MemoryDenyWriteExecute = true;
       };
     };
   };

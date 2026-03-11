@@ -48,6 +48,7 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r .next/standalone $out/share/blog/standalone
     cp -r .next/static $out/share/blog/static
     cp -r public $out/share/blog/public
+    cp -r fonts $out/share/blog/standalone/fonts
 
     # Prepare standalone tree while it's writable during build.
     mkdir -p $out/share/blog/standalone/.next
