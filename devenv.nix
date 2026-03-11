@@ -6,6 +6,10 @@
     pnpm.enable = true;
   };
 
+  services.redis.enable = true;
+
+  env.REDIS_URL = "redis://127.0.0.1:6379";
+
   packages = with pkgs; [
     git
     nodePackages.prettier

@@ -19,27 +19,33 @@
           inherit system;
         };
         lib = pkgs.lib;
+        isLinux = pkgs.stdenv.isLinux;
 
         blog = pkgs.callPackage ./nix/package.nix { };
+        devenvPkg = devenv.packages.${system}.devenv;
         devShell = devenv.lib.mkShell {
           inherit inputs pkgs;
-          modules = [
-            ({ ... }: {
-              devenv.root = lib.mkForce (toString ./.);
-            })
-            ./devenv.nix
-          ];
+          modules = [ ./devenv.nix ];
         };
       in
       {
-        packages = {
+        packages = lib.optionalAttrs isLinux {
           default = blog;
           blog = blog;
+        } // {
+          devenv = devenvPkg;
         };
 
-        apps.default = {
-          type = "app";
-          program = "${blog}/bin/blog";
+        apps = lib.optionalAttrs isLinux {
+          default = {
+            type = "app";
+            program = "${blog}/bin/blog";
+          };
+        } // {
+          devenv = {
+            type = "app";
+            program = "${devenvPkg}/bin/devenv";
+          };
         };
 
         devShells.default = devShell;

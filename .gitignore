@@ -8,5 +8,9 @@ dist
 .pnpm-debug.log
 TODO
 .env*.local
+.direnv/
+.devenv/
+result
+.envrc.local
 fonts/*
 !fonts/init.mjs
