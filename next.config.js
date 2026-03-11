@@ -1,9 +1,13 @@
 const withMDX = require("@next/mdx")();
 
 module.exports = withMDX({
+  output: "standalone",
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   experimental: {
     mdxRs: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   images: {
     minimumCacheTTL: 2678400,

@@ -2,31 +2,43 @@ export const revalidate = 300;
 
 import { ImageResponse } from "next/og";
 import { getPosts } from "@/app/get-posts";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
 export async function generateStaticParams() {
   return (await getPosts()).map(post => ({ id: post.id }));
 }
 
-// fonts
-const fontsDir = join(process.cwd(), "fonts");
+function readFont(candidates: string[]) {
+  for (const file of candidates) {
+    if (existsSync(file)) return readFileSync(file);
+  }
+  throw new Error(`Font not found. Tried: ${candidates.join(", ")}`);
+}
 
-const geistSans = readFileSync(
-  join(fontsDir, "geist-regular.ttf")
-);
+const geistSans = readFont([
+  join(process.cwd(), "fonts/geist-regular.ttf"),
+  join(process.cwd(), "node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2"),
+  join(process.cwd(), "node_modules/@fontsource/inter/files/inter-latin-400-normal.woff"),
+]);
 
-const geistSansMedium = readFileSync(
-  join(fontsDir, "geist-medium.ttf")
-);
+const geistSansMedium = readFont([
+  join(process.cwd(), "fonts/geist-medium.ttf"),
+  join(process.cwd(), "node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2"),
+  join(process.cwd(), "node_modules/@fontsource/inter/files/inter-latin-500-normal.woff"),
+]);
 
-const geistSansBold = readFileSync(
-  join(fontsDir, "geist-bold.ttf")
-);
+const geistSansBold = readFont([
+  join(process.cwd(), "fonts/geist-bold.ttf"),
+  join(process.cwd(), "node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2"),
+  join(process.cwd(), "node_modules/@fontsource/inter/files/inter-latin-700-normal.woff"),
+]);
 
-const geistMono = readFileSync(
-  join(fontsDir, "geist-mono-regular.ttf")
-);
+const geistMono = readFont([
+  join(process.cwd(), "fonts/geist-mono-regular.ttf"),
+  join(process.cwd(), "node_modules/@fontsource/roboto-mono/files/roboto-mono-latin-400-normal.woff2"),
+  join(process.cwd(), "node_modules/@fontsource/roboto-mono/files/roboto-mono-latin-400-normal.woff"),
+]);
 
 export async function GET(_req: Request, props) {
   const params = await props.params;

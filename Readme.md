@@ -28,6 +28,69 @@ requires no credentials.
 vc dev
 ```
 
+## Nix + devenv workflow
+
+### Local development (devenv)
+
+```bash
+devenv shell
+# or
+# devenv up
+```
+
+The shell uses Node 22 + pnpm and will install dependencies on first entry.
+
+### Build package with Nix
+
+```bash
+nix build .#blog
+```
+
+> Note: first build may ask you to update the `hash` in `nix/package.nix`
+> (`fetchPnpmDeps`) with the value Nix reports.
+
+### Run packaged app
+
+```bash
+nix run .#blog
+```
+
+The app reads `HOST` and `PORT` (defaults: `127.0.0.1:3000`).
+
+> Build-only note: `SKIP_VIEWS=1` and `SKIP_TWEET_FETCH=1` are set in the Nix
+> build derivation to keep builds reproducible in sandboxed/offline contexts.
+> They are **not** set by default in runtime service config.
+
+### NixOS module (for clan/dotfiles)
+
+This flake exports `nixosModules.blog`.
+
+Example:
+
+```nix
+{
+  inputs.blog.url = "github:imrane/blog";
+
+  outputs = { self, nixpkgs, blog, ... }: {
+    nixosConfigurations.my-host = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        blog.nixosModules.blog
+        ({ ... }: {
+          services.imrane.blog = {
+            enable = true;
+            host = "127.0.0.1";
+            port = 3000;
+            redisUrl = "redis://redis.internal:6379";
+            # environmentFile = /run/secrets/blog-env;
+          };
+        })
+      ];
+    };
+  };
+}
+```
+
 ### Deployment
 
 #### Staging

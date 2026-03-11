@@ -16,6 +16,10 @@ interface TweetArgs {
 }
 
 async function getAndCacheTweet(id: string): Promise<TweetType | undefined> {
+  if (process.env.SKIP_TWEET_FETCH === "1") {
+    return undefined;
+  }
+
   // we first prioritize getting a fresh tweet
   try {
     const tweet = await getTweet(id);
