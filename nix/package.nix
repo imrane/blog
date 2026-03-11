@@ -49,6 +49,11 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r .next/static $out/share/blog/static
     cp -r public $out/share/blog/public
 
+    # Prepare standalone tree while it's writable during build.
+    mkdir -p $out/share/blog/standalone/.next
+    ln -sfn "$out/share/blog/static" $out/share/blog/standalone/.next/static
+    ln -sfn "$out/share/blog/public" $out/share/blog/standalone/public
+
     mkdir -p $out/bin
     cat > $out/bin/blog <<EOF
     #!${bash}/bin/bash
@@ -58,9 +63,6 @@ stdenv.mkDerivation (finalAttrs: {
     export PORT="''${PORT:-3000}"
 
     cd "$out/share/blog/standalone"
-    mkdir -p .next
-    ln -sfn "$out/share/blog/static" .next/static
-    ln -sfn "$out/share/blog/public" public
 
     exec ${nodejs_22}/bin/node server.js
     EOF
