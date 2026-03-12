@@ -8,25 +8,15 @@ deployed to the cloud via [Vercel](https://vercel.com).
 
 First, install [Vercel CLI](https://vercel.com/download).
 
-### Local services
-
-This project now uses a local Redis instance for caching (in place of Upstash).
-Start the Docker services and set your environment before running the app:
-
-```bash
-docker compose up -d
-cp .env.local.example .env.local # adjust as needed
-```
-
-There are currently no other third-party API keys required. Tweet embeds rely on
-the `react-tweet` package, which uses Twitter's public embed endpoints and
-requires no credentials.
-
 ### Development
 
 ```
 vc dev
 ```
+
+There are currently no third-party API keys required. Tweet embeds rely on the
+`react-tweet` package, which uses Twitter's public embed endpoints and requires
+no credentials.
 
 ## Nix + devenv workflow
 
@@ -56,6 +46,78 @@ nix run .#blog
 ```
 
 The app reads `HOST` and `PORT` (defaults: `127.0.0.1:3000`).
+
+### Build OCI image (Podman)
+
+Build a loadable OCI archive from the flake output:
+
+```bash
+nix build .#blog-image
+```
+
+Load it into Podman:
+
+```bash
+podman load < result
+podman run --rm -p 3000:3000 \
+  -e REDIS_URL=redis://redis.internal:6379 \
+  imrane-blog:latest
+```
+
+If you do not have Redis locally, run with views/tweet cache disabled:
+
+```bash
+podman run --rm -p 3000:3000 \
+  -e SKIP_VIEWS=1 \
+  -e SKIP_TWEET_FETCH=1 \
+  imrane-blog:latest
+```
+
+If you prefer streaming directly into your container runtime:
+
+```bash
+nix run .#blog-image-stream | podman load
+```
+
+### Use OCI output in one machine flake
+
+You can import this flake in your infra flake and let NixOS load the image from
+`blog-image` automatically for a single host:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    blog.url = "github:imrane/blog";
+  };
+
+  outputs = { nixpkgs, blog, ... }: {
+    nixosConfigurations.my-server = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ({ pkgs, ... }: {
+          virtualisation.podman.enable = true;
+          virtualisation.oci-containers.backend = "podman";
+
+          virtualisation.oci-containers.containers.blog = {
+            image = "imrane-blog:latest";
+            imageFile = blog.packages.${pkgs.system}.blog-image;
+            ports = [ "3000:3000" ];
+            environment = {
+              HOST = "0.0.0.0";
+              PORT = "3000";
+              NODE_ENV = "production";
+              REDIS_URL = "redis://redis.internal:6379";
+            };
+          };
+        })
+      ];
+    };
+  };
+}
+```
+
+If `REDIS_URL` is not set, the app falls back to its internal default behavior.
 
 > Build-only note: `SKIP_VIEWS=1` and `SKIP_TWEET_FETCH=1` are set in the Nix
 > build derivation to keep builds reproducible in sandboxed/offline contexts.
