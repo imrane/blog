@@ -6,7 +6,17 @@ import { ago } from "time-ago";
 import useSWR from "swr";
 import type { Post } from "@/app/get-posts";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  const text = await res.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
 
 export function Header({ posts }: { posts: Post[] }) {
   const segments = useSelectedLayoutSegments();
@@ -24,13 +34,14 @@ export function Header({ posts }: { posts: Post[] }) {
       refreshInterval: 5000,
     }
   );
+  const resolvedPost = post ?? initialPost;
 
   if (initialPost == null) return <></>;
 
   return (
     <>
       <h1 className="text-2xl font-bold mb-1 dark:text-gray-100">
-        {post.title}
+        {resolvedPost.title}
       </h1>
 
       <p className="font-mono flex text-xs text-neutral-500 dark:text-neutral-500">
@@ -54,15 +65,15 @@ export function Header({ posts }: { posts: Post[] }) {
            * In practice this is not an issue because we revalidate the entire page over time
            * and because we will move this to a server component with template.tsx at some point */}
           <span suppressHydrationWarning={true}>
-            {post.date} ({ago(post.date, true)} ago)
+            {resolvedPost.date} ({ago(resolvedPost.date, true)} ago)
           </span>
         </span>
 
         <span className="pr-1.5">
           <Views
-            id={post.id}
+            id={resolvedPost.id}
             mutate={mutate}
-            defaultValue={post.viewsFormatted}
+            defaultValue={resolvedPost.viewsFormatted}
           />
         </span>
       </p>
@@ -81,9 +92,14 @@ function Views({ id, mutate, defaultValue }) {
     if (!didLogViewRef.current) {
       const url = "/api/view?incr=1&id=" + encodeURIComponent(id);
       fetch(url)
-        .then(res => res.json())
+        .then(res => res.text())
         .then(obj => {
-          mutate(obj);
+          if (!obj) return;
+          try {
+            mutate(JSON.parse(obj));
+          } catch {
+            // Ignore malformed responses and keep the current UI state.
+          }
         })
         .catch(console.error);
       didLogViewRef.current = true;
