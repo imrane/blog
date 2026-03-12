@@ -52,3 +52,39 @@ jobs:
 
           curl -fsS "http://127.0.0.1:3000/api/posts" | tee /tmp/posts.json
           grep -q '"id"' /tmp/posts.json
+
+      - name: Build OCI image
+        run: nix build .#blog-image
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+
+      - name: Smoke test OCI image (Podman)
+        run: |
+          set -euo pipefail
+          podman load < result
+          podman rm -f blog-ci 2>/dev/null || true
+          trap 'podman rm -f blog-ci 2>/dev/null || true' EXIT
+          podman run -d --name blog-ci -p 3000:3000 \
+            -e SKIP_VIEWS=1 \
+            -e SKIP_TWEET_FETCH=1 \
+            imrane-blog:latest
+
+          for i in $(seq 1 90); do
+            if curl -fsS "http://127.0.0.1:3000/api/health" > /tmp/health-container.json 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          if ! curl -fsS "http://127.0.0.1:3000/api/health" | tee /tmp/health-container.json; then
+            echo "Container health check failed after waiting"
+            podman logs blog-ci || true
+            exit 1
+          fi
+          grep -q '"status":"ok"' /tmp/health-container.json
+
+          curl -fsS "http://127.0.0.1:3000/api/posts" | tee /tmp/posts-container.json
+          grep -q '"id"' /tmp/posts-container.json
