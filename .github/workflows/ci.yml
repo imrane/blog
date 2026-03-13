@@ -23,13 +23,23 @@ jobs:
       - name: Build package
         run: nix build .#blog
 
-      - name: Smoke test packaged app
+      - name: Smoke test packaged app (Redis auth + DB)
         run: |
           set -euo pipefail
           APP_BIN="$(readlink -f ./result/bin/blog)"
-          HOST=127.0.0.1 PORT=3000 SKIP_VIEWS=1 SKIP_TWEET_FETCH=1 "$APP_BIN" > /tmp/blog.log 2>&1 &
+          docker rm -f blog-redis-ci 2>/dev/null || true
+          docker run -d --name blog-redis-ci -p 6379:6379 \
+            redis:7-alpine redis-server --requirepass super-secret
+          HOST=127.0.0.1 PORT=3000 REDIS_URL=redis://default:super-secret@127.0.0.1:6379/1 SKIP_TWEET_FETCH=1 "$APP_BIN" > /tmp/blog.log 2>&1 &
           APP_PID=$!
-          trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
+          trap 'kill "$APP_PID" 2>/dev/null || true; docker rm -f blog-redis-ci 2>/dev/null || true' EXIT
+
+          for i in $(seq 1 30); do
+            if docker exec blog-redis-ci redis-cli -a super-secret ping 2>/dev/null | grep -q PONG; then
+              break
+            fi
+            sleep 1
+          done
 
           for i in $(seq 1 90); do
             if ! kill -0 "$APP_PID" 2>/dev/null; then
@@ -52,6 +62,12 @@ jobs:
 
           curl -fsS "http://127.0.0.1:3000/api/posts" | tee /tmp/posts.json
           grep -q '"id"' /tmp/posts.json
+
+          curl -fsS "http://127.0.0.1:3000/api/view?id=hello-world&incr=1" | tee /tmp/view1.json
+          grep -q '"views":1' /tmp/view1.json
+
+          curl -fsS "http://127.0.0.1:3000/api/view?id=hello-world&incr=1" | tee /tmp/view2.json
+          grep -q '"views":2' /tmp/view2.json
 
       - name: Build OCI image
         run: nix build .#blog-image

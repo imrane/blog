@@ -93,11 +93,40 @@ function parseResp(buffer: Buffer, offset = 0): { value: RespValue; next: number
   }
 }
 
-async function sendCommand(command: (string | number)[], host: string, port: number) {
-  const payload = serializeCommand(command);
+type RedisAuth = {
+  username?: string;
+  password: string;
+};
+
+type RedisConnectionOptions = {
+  auth?: RedisAuth;
+  db?: number;
+};
+
+async function sendCommand(
+  command: (string | number)[],
+  host: string,
+  port: number,
+  options?: RedisConnectionOptions
+) {
+  const commands: (string | number)[][] = [];
+  if (options?.auth?.password) {
+    commands.push(
+      options.auth.username
+        ? ["AUTH", options.auth.username, options.auth.password]
+        : ["AUTH", options.auth.password]
+    );
+  }
+  if (typeof options?.db === "number") {
+    commands.push(["SELECT", options.db]);
+  }
+  commands.push(command);
+  const payload = commands.map(serializeCommand).join("");
+  const expectedResponses = commands.length;
 
   return await new Promise<RespValue>((resolve, reject) => {
     let buffer = Buffer.alloc(0);
+    const responses: RespValue[] = [];
     let settled = false;
     const settle = {
       resolve(value: RespValue) {
@@ -123,11 +152,24 @@ async function sendCommand(command: (string | number)[], host: string, port: num
 
     socket.on("data", chunk => {
       buffer = Buffer.concat([buffer, chunk]);
+      let offset = 0;
       try {
-        const { value } = parseResp(buffer);
-        settle.resolve(value);
+        while (responses.length < expectedResponses) {
+          const parsed = parseResp(buffer, offset);
+          responses.push(parsed.value);
+          offset = parsed.next;
+        }
+
+        if (offset > 0) {
+          buffer = buffer.subarray(offset);
+        }
+
+        settle.resolve(responses[responses.length - 1]);
         socket.end();
       } catch (error) {
+        if (offset > 0) {
+          buffer = buffer.subarray(offset);
+        }
         if (error instanceof IncompleteRespError) {
           return;
         }
@@ -150,11 +192,12 @@ async function sendCommand(command: (string | number)[], host: string, port: num
 class RedisClient {
   constructor(
     private readonly host: string,
-    private readonly port: number
+    private readonly port: number,
+    private readonly options?: RedisConnectionOptions
   ) {}
 
   private async command(args: (string | number)[]) {
-    return await sendCommand(args, this.host, this.port);
+    return await sendCommand(args, this.host, this.port, this.options);
   }
 
   async hgetall(key: string) {
@@ -219,7 +262,39 @@ const redis =
         const parsedUrl = new URL(redisUrl);
         const redisHost = parsedUrl.hostname;
         const redisPort = Number.parseInt(parsedUrl.port || "6379", 10);
-        return new RedisClient(redisHost, redisPort);
+        const urlUsername = decodeURIComponent(parsedUrl.username || "");
+        const urlPassword = decodeURIComponent(parsedUrl.password || "");
+        const dbFromUrl = parsedUrl.pathname.trim();
+        const envUsername = process.env.REDIS_USERNAME?.trim();
+        const envPassword = process.env.REDIS_PASSWORD?.trim();
+        const redisUsername = envUsername || urlUsername || undefined;
+        const redisPassword = envPassword || urlPassword;
+        let redisDb: number | undefined = undefined;
+
+        if (dbFromUrl && dbFromUrl !== "/") {
+          const dbString = dbFromUrl.startsWith("/") ? dbFromUrl.slice(1) : dbFromUrl;
+          if (!/^\d+$/.test(dbString)) {
+            throw new Error(
+              `Invalid Redis database index in REDIS_URL path "${parsedUrl.pathname}". Use a numeric path like /0 or /1.`
+            );
+          }
+          redisDb = Number.parseInt(dbString, 10);
+        }
+
+        if (redisUsername && !redisPassword) {
+          throw new Error(
+            "REDIS_USERNAME is set, but no password was provided. Set REDIS_PASSWORD or include a password in REDIS_URL."
+          );
+        }
+
+        const auth = redisPassword
+          ? {
+              password: redisPassword,
+              ...(redisUsername ? { username: redisUsername } : {}),
+            }
+          : undefined;
+
+        return new RedisClient(redisHost, redisPort, { auth, db: redisDb });
       })();
 
 export default redis;

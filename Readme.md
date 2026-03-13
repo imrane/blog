@@ -64,6 +64,19 @@ podman run --rm -p 3000:3000 \
   imrane-blog:latest
 ```
 
+For authenticated Redis, you can either embed credentials in `REDIS_URL` or
+pass them separately:
+
+```bash
+# URL style
+-e REDIS_URL=redis://app-user:super-secret@redis.internal:6379
+
+# Split env vars (override URL credentials if both are set)
+-e REDIS_URL=redis://redis.internal:6379 \
+-e REDIS_USERNAME=app-user \
+-e REDIS_PASSWORD=super-secret
+```
+
 If you do not have Redis locally, run with views/tweet cache disabled:
 
 ```bash
@@ -108,6 +121,9 @@ You can import this flake in your infra flake and let NixOS load the image from
               PORT = "3000";
               NODE_ENV = "production";
               REDIS_URL = "redis://redis.internal:6379";
+              # Optional for authenticated Redis:
+              # REDIS_USERNAME = "app-user";
+              # REDIS_PASSWORD = "super-secret";
             };
           };
         })
@@ -118,6 +134,9 @@ You can import this flake in your infra flake and let NixOS load the image from
 ```
 
 If `REDIS_URL` is not set, the app falls back to its internal default behavior.
+`REDIS_USERNAME`/`REDIS_PASSWORD` are optional and can be used with or without
+credentials embedded in `REDIS_URL`.
+`REDIS_URL` path selects Redis DB (for example `...:6379/1`); default is DB `0`.
 
 > Build-only note: `SKIP_VIEWS=1` and `SKIP_TWEET_FETCH=1` are set in the Nix
 > build derivation to keep builds reproducible in sandboxed/offline contexts.
